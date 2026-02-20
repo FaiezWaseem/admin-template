@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Loader2, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { updateUserRole, deleteUser } from "@/actions/users";
+import { updateUserRole, deleteUser, createUser } from "@/actions/users";
 import {
     Select,
     SelectContent,
@@ -36,6 +36,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Plus } from "lucide-react";
 
 type User = {
     id: string;
@@ -59,6 +61,8 @@ export function UsersTable({ users, roles }: UsersTableProps) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [selectedRole, setSelectedRole] = useState("");
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [createData, setCreateData] = useState({ name: "", email: "", password: "", roleId: roles[0]?.id || "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Filter out deleted users for the table
@@ -68,6 +72,28 @@ export function UsersTable({ users, roles }: UsersTableProps) {
         setSelectedUser(user);
         setSelectedRole(user.role.id);
         setIsEditModalOpen(true);
+    };
+
+    const handleCreateUser = async () => {
+        if (!createData.email || !createData.password || !createData.roleId) {
+            toast.error("Please fill all required fields.");
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const res = await createUser(createData);
+            if (res.success) {
+                toast.success("User created successfully.");
+                setIsCreateModalOpen(false);
+                setCreateData({ name: "", email: "", password: "", roleId: roles[0]?.id || "" });
+            } else {
+                toast.error(res.error || "Failed to create user.");
+            }
+        } catch {
+            toast.error("An unexpected error occurred.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleSaveRole = async () => {
@@ -100,7 +126,12 @@ export function UsersTable({ users, roles }: UsersTableProps) {
     };
 
     return (
-        <>
+        <div className="space-y-4">
+            <div className="flex justify-end">
+                <Button onClick={() => setIsCreateModalOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add User
+                </Button>
+            </div>
             <div className="rounded-md border bg-card">
                 <Table>
                     <TableHeader>
@@ -186,6 +217,64 @@ export function UsersTable({ users, roles }: UsersTableProps) {
                     </div>
                 </DialogContent>
             </Dialog>
-        </>
+
+            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New User</DialogTitle>
+                        <DialogDescription>
+                            Create a new user account and assign them a role.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <label className="text-sm font-medium">Name</label>
+                            <Input
+                                placeholder="John Doe"
+                                value={createData.name}
+                                onChange={(e) => setCreateData({ ...createData, name: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <label className="text-sm font-medium">Email</label>
+                            <Input
+                                type="email"
+                                placeholder="john@example.com"
+                                value={createData.email}
+                                onChange={(e) => setCreateData({ ...createData, email: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <label className="text-sm font-medium">Password</label>
+                            <Input
+                                type="password"
+                                placeholder="******"
+                                value={createData.password}
+                                onChange={(e) => setCreateData({ ...createData, password: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <label className="text-sm font-medium">Role</label>
+                            <Select value={createData.roleId} onValueChange={(val) => setCreateData({ ...createData, roleId: val })}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {roles.map((role) => (
+                                        <SelectItem key={role.id} value={role.id}>
+                                            {role.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button disabled={isSubmitting} onClick={handleCreateUser}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Create User
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
     );
 }
