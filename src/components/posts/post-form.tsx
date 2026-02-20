@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Trash2, Save, Loader2, GripVertical, Image as ImageIcon, Type, Heading1 } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,14 +27,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { createPost, updatePost, PostData } from "@/actions/posts";
-
-const blockSchema = z.object({
-    id: z.string(),
-    type: z.enum(["h1", "h2", "p", "image"]),
-    content: z.string(),
-});
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 const postSchema = z.object({
     title: z.string().min(2, "Title must be at least 2 characters."),
@@ -42,7 +36,7 @@ const postSchema = z.object({
     excerpt: z.string().optional(),
     featuredImg: z.string().optional(),
     status: z.enum(["draft", "published", "archived"]),
-    blocks: z.array(blockSchema),
+    content: z.string().min(1, "Post content cannot be empty."),
 });
 
 type PostFormValues = z.infer<typeof postSchema>;
@@ -55,7 +49,7 @@ interface PostFormProps {
         excerpt: string;
         featuredImg: string;
         status: string;
-        content: string; // JSON
+        content: string; // HTML string now
     };
 }
 
@@ -63,13 +57,24 @@ export function PostForm({ initialData }: PostFormProps) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
 
-    let parsedBlocks = [];
-    try {
-        if (initialData?.content) {
-            parsedBlocks = JSON.parse(initialData.content);
+    let initialHtml = "";
+    if (initialData?.content) {
+        try {
+            // legacy catch in case they had blocks before
+            const parsed = JSON.parse(initialData.content);
+            if (Array.isArray(parsed)) {
+                initialHtml = parsed.map((p: any) => {
+                    if (p.type === 'h1') return `<h1>${p.content}</h1>`;
+                    if (p.type === 'h2') return `<h2>${p.content}</h2>`;
+                    if (p.type === 'image') return `<img src="${p.content}" />`;
+                    return `<p>${p.content}</p>`;
+                }).join("");
+            } else {
+                initialHtml = initialData.content;
+            }
+        } catch {
+            initialHtml = initialData.content;
         }
-    } catch (e) {
-        parsedBlocks = [];
     }
 
     const form = useForm<PostFormValues>({
@@ -80,13 +85,8 @@ export function PostForm({ initialData }: PostFormProps) {
             excerpt: initialData?.excerpt || "",
             featuredImg: initialData?.featuredImg || "",
             status: (initialData?.status as any) || "draft",
-            blocks: parsedBlocks.length > 0 ? parsedBlocks : [{ id: crypto.randomUUID(), type: "p", content: "" }],
+            content: initialHtml,
         },
-    });
-
-    const { fields, append, remove, swap } = useFieldArray({
-        control: form.control,
-        name: "blocks",
     });
 
     const handleTitleBlur = () => {
@@ -106,7 +106,7 @@ export function PostForm({ initialData }: PostFormProps) {
                 excerpt: data.excerpt || "",
                 featuredImg: data.featuredImg || "",
                 status: data.status,
-                content: JSON.stringify(data.blocks),
+                content: data.content,
             };
 
             let res;
@@ -128,10 +128,6 @@ export function PostForm({ initialData }: PostFormProps) {
             setIsSaving(false);
         }
     }
-
-    const addBlock = (type: "h1" | "h2" | "p" | "image") => {
-        append({ id: crypto.randomUUID(), type, content: "" });
-    };
 
     return (
         <Form {...form}>
@@ -182,68 +178,25 @@ export function PostForm({ initialData }: PostFormProps) {
                             />
                         </div>
 
-                        {/* Block Editor Area */}
+                        {/* Rich Text Editor Area */}
                         <div className="bg-card border rounded-lg p-6 space-y-4">
                             <div>
                                 <h3 className="text-lg font-medium">Post Body</h3>
-                                <p className="text-sm text-muted-foreground mb-4">Write your article dynamically using sequential blocks.</p>
+                                <p className="text-sm text-muted-foreground mb-4">Write your article using the rich text editor.</p>
                             </div>
 
-                            <div className="space-y-4">
-                                {fields.map((field, index) => (
-                                    <div key={field.id} className="flex gap-2 items-start border rounded-md p-3 relative group animate-in fade-in">
-                                        <div className="flex-none p-2 cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-foreground mt-6">
-                                            <GripVertical className="h-5 w-5" />
-                                        </div>
-                                        <div className="flex-1 space-y-2">
-                                            <FormField
-                                                control={form.control}
-                                                name={`blocks.${index}.content`}
-                                                render={({ field: blockField }) => (
-                                                    <FormItem>
-                                                        <div className="flex items-center justify-between mb-1">
-                                                            <Badge variant="secondary" className="font-mono text-[10px] uppercase">
-                                                                {field.type === 'h1' ? 'Header 1' : field.type === 'h2' ? 'Header 2' : field.type === 'image' ? 'Image URL' : 'Paragraph'}
-                                                            </Badge>
-                                                            <div className="flex gap-1">
-                                                                {index > 0 && (
-                                                                    <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => swap(index, index - 1)}>↑</Button>
-                                                                )}
-                                                                {index < fields.length - 1 && (
-                                                                    <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => swap(index, index + 1)}>↓</Button>
-                                                                )}
-                                                                <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-500 hover:text-red-600" onClick={() => remove(index)}>
-                                                                    <Trash2 className="h-3 w-3" />
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                        <FormControl>
-                                                            {field.type === "p" ? (
-                                                                <Textarea placeholder="Paragraph text..." className="resize-none min-h-[100px]" {...blockField} />
-                                                            ) : (
-                                                                <Input placeholder={field.type === 'image' ? 'https://example.com/image.jpg' : 'Heading text...'} {...blockField} />
-                                                            )}
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 pt-4 border-t border-dashed">
-                                <Button type="button" variant="outline" size="sm" onClick={() => addBlock("h2")}>
-                                    <Heading1 className="h-4 w-4 mr-2" /> Add Heading
-                                </Button>
-                                <Button type="button" variant="outline" size="sm" onClick={() => addBlock("p")}>
-                                    <Type className="h-4 w-4 mr-2" /> Add Text
-                                </Button>
-                                <Button type="button" variant="outline" size="sm" onClick={() => addBlock("image")}>
-                                    <ImageIcon className="h-4 w-4 mr-2" /> Add Image
-                                </Button>
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="content"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <RichTextEditor value={field.value} onChange={field.onChange} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
                     </div>
 

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { UserNav } from "./user-nav";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Menu, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ export function Topbar({ session }: TopbarProps) {
                         />
                     </div>
 
+                    <ThemeToggle />
                     <UserNav session={session} />
                 </div>
             </div>
