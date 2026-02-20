@@ -26,3 +26,34 @@ export async function createRole(name: string, description: string) {
         return { success: false, error: (error as Error).message };
     }
 }
+
+export async function toggleRolePermission(roleId: string, permissionId: string) {
+    try {
+        const existing = await prisma.rolePermission.findUnique({
+            where: {
+                roleId_permissionId: {
+                    roleId,
+                    permissionId,
+                },
+            },
+        });
+
+        if (existing) {
+            await prisma.rolePermission.delete({
+                where: { id: existing.id },
+            });
+        } else {
+            await prisma.rolePermission.create({
+                data: {
+                    roleId,
+                    permissionId,
+                },
+            });
+        }
+
+        revalidatePath("/dashboard/permissions");
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: "Failed to toggle permission." };
+    }
+}

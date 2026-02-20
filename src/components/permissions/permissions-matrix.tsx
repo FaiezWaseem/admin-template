@@ -38,7 +38,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
-import { createRole } from "@/actions/roles";
+import { createRole, toggleRolePermission } from "@/actions/roles";
+import { cn } from "@/lib/utils";
 
 export function PermissionsMatrix({ roles, permissions }: PermissionsMatrixProps) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -108,26 +109,55 @@ export function PermissionsMatrix({ roles, permissions }: PermissionsMatrixProps
                                     <TableCell key={role.id} className="text-center border-r p-0">
                                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-1 p-2">
                                             {actions.map((action) => {
+                                                const permissionDef = permissions.find((p) => p.resource === resource && p.action === action);
                                                 const allowed = hasPermission(role, resource, action);
+
+                                                if (!permissionDef) {
+                                                    return (
+                                                        <div key={`${role.id}-${resource}-${action}`} className="flex flex-col items-center justify-center p-1 opacity-20">
+                                                            <span className="text-[10px] uppercase text-muted-foreground mb-1">{action.charAt(0)}</span>
+                                                            <div className="h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                                                <X className="h-3 w-3 text-slate-400" />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
                                                 return (
-                                                    <div
+                                                    <button
                                                         key={`${role.id}-${resource}-${action}`}
-                                                        className="flex flex-col items-center justify-center p-1"
+                                                        onClick={async () => {
+                                                            if (role.name === "Admin") {
+                                                                toast.error("Cannot modify Super Admin permissions.");
+                                                                return;
+                                                            }
+                                                            const res = await toggleRolePermission(role.id, permissionDef.id);
+                                                            if (res.success) {
+                                                                toast.success(`Permission ${allowed ? 'removed' : 'added'}.`);
+                                                            } else {
+                                                                toast.error(res.error || "Failed to update permission.");
+                                                            }
+                                                        }}
+                                                        disabled={role.name === "Admin"}
+                                                        className={cn(
+                                                            "flex flex-col items-center justify-center p-1 transition-all rounded-md hover:bg-muted cursor-pointer",
+                                                            role.name === "Admin" && "opacity-50 cursor-not-allowed"
+                                                        )}
                                                         title={`${role.name} - ${action} ${resource}`}
                                                     >
                                                         <span className="text-[10px] uppercase text-muted-foreground mb-1">
                                                             {action.charAt(0)}
                                                         </span>
                                                         {allowed ? (
-                                                            <div className="h-5 w-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                                            <div className="h-5 w-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center transition-colors">
                                                                 <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                                                             </div>
                                                         ) : (
-                                                            <div className="h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                                            <div className="h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center transition-colors hover:bg-slate-200 dark:hover:bg-slate-700">
                                                                 <X className="h-3 w-3 text-slate-400" />
                                                             </div>
                                                         )}
-                                                    </div>
+                                                    </button>
                                                 );
                                             })}
                                         </div>

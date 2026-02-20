@@ -59,25 +59,14 @@ const routes: RouteDef[] = [
         color: "text-emerald-500",
     },
     {
-        label: "Events & Routing",
-        icon: Activity,
-        href: "/dashboard/events",
-        color: "text-amber-500",
-    },
-    {
-        label: "Activity Logs",
-        icon: Activity,
-        href: "/dashboard/logs",
-        color: "text-orange-700",
-    },
-    {
         label: "Settings",
         icon: Settings,
         color: "text-slate-400",
         children: [
             { label: "General Settings", href: "/dashboard/settings" },
             { label: "Email Gateway", href: "/dashboard/email" },
-            { label: "Sessions", href: "/dashboard/sessions" }
+            { label: "Sessions", href: "/dashboard/sessions" },
+            { label: "Activity Logs", href: "/dashboard/logs" }
         ]
     },
 ];
