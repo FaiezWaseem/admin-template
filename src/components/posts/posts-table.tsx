@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Edit, BookOpen, Plus, Trash2, ArrowUpRight, Globe } from "lucide-react";
 import { deletePost } from "@/actions/posts";
 import { format } from "date-fns";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type PostDoc = {
     id: string;
@@ -30,12 +31,13 @@ type PostDoc = {
 };
 
 export function PostsTable({ posts }: { posts: PostDoc[] }) {
-    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+    const [postToDelete, setPostToDelete] = useState<{ id: string, title: string } | null>(null);
 
-    const handleDelete = async (id: string, title: string) => {
-        if (!confirm(`Are you sure you want to permanently delete the post "${title}"?`)) return;
-
-        setIsDeleting(id);
+    const executeDelete = async () => {
+        if (!postToDelete) return;
+        const { id, title } = postToDelete;
+        setIsDeletingId(id);
         try {
             const res = await deletePost(id);
             if (res.success) {
@@ -44,7 +46,8 @@ export function PostsTable({ posts }: { posts: PostDoc[] }) {
                 toast.error(res.error || "Failed to delete the post.");
             }
         } finally {
-            setIsDeleting(null);
+            setIsDeletingId(null);
+            setPostToDelete(null);
         }
     };
 
@@ -116,8 +119,8 @@ export function PostsTable({ posts }: { posts: PostDoc[] }) {
                                                 variant="ghost"
                                                 size="sm"
                                                 className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                                                onClick={() => handleDelete(post.id, post.title)}
-                                                disabled={isDeleting === post.id}
+                                                onClick={() => setPostToDelete({ id: post.id, title: post.title })}
+                                                disabled={isDeletingId === post.id}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -129,6 +132,15 @@ export function PostsTable({ posts }: { posts: PostDoc[] }) {
                     </TableBody>
                 </Table>
             </div>
+
+            <ConfirmDeleteDialog
+                isOpen={!!postToDelete}
+                onOpenChange={(open) => !open && setPostToDelete(null)}
+                onConfirm={executeDelete}
+                isDeleting={!!isDeletingId && isDeletingId === postToDelete?.id}
+                title={`Delete "${postToDelete?.title}"?`}
+                description="This blog post will be permanently deleted along with its SEO meta data."
+            />
         </div>
     );
 }

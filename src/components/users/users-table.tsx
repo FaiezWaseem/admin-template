@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type User = {
     id: string;
@@ -64,6 +65,9 @@ export function UsersTable({ users, roles }: UsersTableProps) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [createData, setCreateData] = useState({ name: "", email: "", password: "", roleId: roles[0]?.id || "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Filter out deleted users for the table
     const activeUsers = users.filter((u) => u.status !== "deleted");
@@ -114,14 +118,19 @@ export function UsersTable({ users, roles }: UsersTableProps) {
         }
     };
 
-    const handleDelete = async (user: User) => {
-        if (confirm(`Are you sure you want to deactivate ${user.email}?`)) {
-            const res = await deleteUser(user.id);
+    const executeDelete = async () => {
+        if (!userToDelete) return;
+        setIsDeleting(true);
+        try {
+            const res = await deleteUser(userToDelete.id);
             if (res.success) {
                 toast.success("User deactivated.");
             } else {
                 toast.error(res.error || "Failed to deactivate user.");
             }
+        } finally {
+            setIsDeleting(false);
+            setUserToDelete(null);
         }
     };
 
@@ -175,7 +184,7 @@ export function UsersTable({ users, roles }: UsersTableProps) {
                                             <DropdownMenuItem onClick={() => openEditModal(user)}>
                                                 <Edit className="mr-2 h-4 w-4" /> Edit Role
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(user)}>
+                                            <DropdownMenuItem className="text-red-600" onClick={() => setUserToDelete(user)}>
                                                 <Trash2 className="mr-2 h-4 w-4" /> Deactivate
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -275,6 +284,15 @@ export function UsersTable({ users, roles }: UsersTableProps) {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDeleteDialog
+                isOpen={!!userToDelete}
+                onOpenChange={(open) => !open && setUserToDelete(null)}
+                onConfirm={executeDelete}
+                isDeleting={isDeleting}
+                title={`Deactivate "${userToDelete?.email}"?`}
+                description="This user will be permanently deactivated and their session tokens immediately revoked."
+            />
         </div>
     );
 }

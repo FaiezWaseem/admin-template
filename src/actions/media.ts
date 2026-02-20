@@ -32,6 +32,8 @@ export async function uploadMedia(formData: FormData) {
 
         const url = `/uploads/${filename}`;
 
+        const folderId = formData.get("folderId") as string | null;
+
         const media = await prisma.media.create({
             data: {
                 filename,
@@ -40,6 +42,7 @@ export async function uploadMedia(formData: FormData) {
                 mimeType: file.type,
                 size: file.size,
                 alt: file.name,
+                ...(folderId ? { folderId } : {}),
             },
         });
 

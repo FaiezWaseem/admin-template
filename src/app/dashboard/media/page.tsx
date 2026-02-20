@@ -8,6 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default async function MediaPage() {
+    const folders = await prisma.mediaFolder.findMany({
+        orderBy: { name: "asc" },
+    });
+
     const mediaItems = await prisma.media.findMany({
         orderBy: { createdAt: "desc" },
     });
@@ -23,7 +27,7 @@ export default async function MediaPage() {
                 </div>
             </div>
 
-            <MediaLibrary items={mediaItems} />
+            <MediaLibrary folders={folders} items={mediaItems} />
         </div>
     );
 }
