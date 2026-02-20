@@ -20,8 +20,14 @@ const authConfig = {
                 return true;
             }
 
-            // Protect dashboard and settings routes placeholder
-            if (!isLoggedIn && (nextUrl.pathname.startsWith("/dashboard") || nextUrl.pathname === "/")) {
+            // Redirect users from root to dashboard
+            if (nextUrl.pathname === "/") {
+                if (isLoggedIn) return Response.redirect(new URL("/dashboard", nextUrl));
+                return false;
+            }
+
+            // Protect dashboard routes
+            if (!isLoggedIn && nextUrl.pathname.startsWith("/dashboard")) {
                 return false;
             }
 

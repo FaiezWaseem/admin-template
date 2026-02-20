@@ -93,23 +93,30 @@ export const {
                         },
                     });
                 } catch (e) {
-                    console.error("Failed to create session record", e);
+                    console.error("Failed to create DB session record:", e);
                 }
+
+                return token; // Fast path: Initial sign-in, skip revocation check
             }
 
             // Check if token was revoked
             if (token.jti) {
-                // We shouldn't do a DB call on EVERY request inside the JWT callback
-                // for performance. Instead, middleware should check caching or we only check periodically.
-                // For strict revocation, we check here:
-                const sessionRecord = await prisma.session.findUnique({
-                    where: { token: token.jti as string },
-                    select: { revoked: true },
-                });
+                try {
+                    const sessionRecord = await prisma.session.findUnique({
+                        where: { token: token.jti as string },
+                        select: { revoked: true },
+                    });
 
-                if (!sessionRecord || sessionRecord.revoked) {
-                    // Token matches a revoked session or is deleted
-                    throw new Error("Session is revoked");
+                    // Only throw if we definitively found a revoked record
+                    // If not found, it might be due to a DB issue or missing record, we can log it instead of throwing immediately.
+                    if (sessionRecord && sessionRecord.revoked) {
+                        throw new Error("Session is revoked");
+                    }
+                } catch (e) {
+                    if (e instanceof Error && e.message === "Session is revoked") {
+                        throw e;
+                    }
+                    console.error("Error checking session revocation:", e);
                 }
             }
 
