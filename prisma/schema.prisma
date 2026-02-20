@@ -1,0 +1,264 @@
+// Admin Dashboard - Prisma Schema
+// Supports: SQLite (default) and MySQL (switch datasource provider + DATABASE_URL)
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── Authentication & Identity ──────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  emailVerified  DateTime?
+  password       String
+  image          String?
+  status         String    @default("active") // active | suspended | banned
+  roleId         String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  role          Role           @relation(fields: [roleId], references: [id])
+  sessions      Session[]
+  activityLogs  ActivityLog[]
+  notifications Notification[]
+  accounts      Account[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Role {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id       String @id @default(cuid())
+  name     String @unique // e.g. "users:create", "settings:update"
+  resource String // e.g. "users", "settings", "media"
+  action   String // e.g. "create", "read", "update", "delete"
+
+  createdAt DateTime @default(now())
+
+  roles RolePermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ─── Sessions ───────────────────────────────────────────────────────────────
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  type         String   @default("db") // db | jwt
+  token        String   @unique
+  device       String   @default("Unknown")
+  ipAddress    String   @default("")
+  userAgent    String   @default("")
+  revoked      Boolean  @default(false)
+  expiresAt    DateTime
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
+}
+
+// ─── Activity & Audit ───────────────────────────────────────────────────────
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String // e.g. "login", "update_profile", "delete_user"
+  resource  String   @default("") // e.g. "user", "settings"
+  details   String   @default("") // JSON string with additional details
+  ipAddress String   @default("")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// ─── Site Configuration ─────────────────────────────────────────────────────
+
+model SiteConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  type  String @default("string") // string | boolean | number | json
+
+  updatedAt DateTime @updatedAt
+
+  @@map("site_configs")
+}
+
+// ─── Content & Pages ────────────────────────────────────────────────────────
+
+model Page {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  content   String   @default("[]") // JSON blocks
+  excerpt   String   @default("")
+  status    String   @default("draft") // draft | published | archived
+  template  String   @default("default")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seoMeta SEOMeta?
+
+  @@index([slug])
+  @@index([status])
+  @@map("pages")
+}
+
+model SEOMeta {
+  id               String  @id @default(cuid())
+  pageId           String  @unique
+  metaTitle        String  @default("")
+  metaDescription  String  @default("")
+  ogTitle          String  @default("")
+  ogDescription    String  @default("")
+  ogImage          String  @default("")
+  canonicalUrl     String  @default("")
+  noIndex          Boolean @default(false)
+  noFollow         Boolean @default(false)
+  structuredData   String  @default("") // JSON-LD string
+  focusKeyword     String  @default("")
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@map("seo_meta")
+}
+
+// ─── Media ──────────────────────────────────────────────────────────────────
+
+model Media {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  url         String
+  provider    String   @default("local") // local | s3
+  alt         String   @default("")
+  folder      String   @default("/")
+  width       Int?
+  height      Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([folder])
+  @@index([mimeType])
+  @@map("media")
+}
+
+// ─── Events & Notifications ────────────────────────────────────────────────
+
+model Event {
+  id          String  @id @default(cuid())
+  name        String  @unique // e.g. "user.registered", "payment.failed"
+  displayName String
+  description String  @default("")
+  trigger     String  @default("manual") // manual | automatic
+  channels    String  @default("[]") // JSON array: ["email", "in_app", "webhook"]
+  payload     String  @default("{}") // JSON schema for event payload
+  active      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notifications Notification[]
+
+  @@map("events")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String?
+  channel   String // email | in_app | webhook
+  status    String   @default("pending") // pending | sent | failed | read
+  subject   String   @default("")
+  body      String   @default("")
+  metadata  String   @default("{}") // JSON
+  sentAt    DateTime?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([status])
+  @@map("notifications")
+}
+
+// ─── JWT Revocation ─────────────────────────────────────────────────────────
+
+model RevokedToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  revokedAt DateTime @default(now())
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("revoked_tokens")
+}
