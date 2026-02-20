@@ -13,7 +13,8 @@ import {
     Mail,
     FileText,
     Menu,
-    X
+    X,
+    FileImage
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -61,10 +62,16 @@ const routes = [
         color: "text-emerald-500",
     },
     {
-        label: "Static Pages",
+        label: "Media Manager",
+        icon: FileImage,
+        href: "/dashboard/media",
+        color: "text-emerald-500",
+    },
+    {
+        label: "Pages & Content",
         icon: FileText,
         href: "/dashboard/pages",
-        color: "text-amber-500",
+        color: "text-purple-600",
     },
     {
         label: "Email Gateway",
