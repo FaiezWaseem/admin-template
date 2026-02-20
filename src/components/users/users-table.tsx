@@ -37,7 +37,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 type User = {
@@ -71,6 +71,18 @@ export function UsersTable({ users, roles }: UsersTableProps) {
 
     // Filter out deleted users for the table
     const activeUsers = users.filter((u) => u.status !== "deleted");
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const [roleFilter, setRoleFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("all");
+
+    const filteredUsers = activeUsers.filter((u) => {
+        const matchesSearch = (u.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+            (u.email?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+        const matchesRole = roleFilter === "all" || u.role.id === roleFilter;
+        const matchesStatus = statusFilter === "all" || u.status === statusFilter;
+        return matchesSearch && matchesRole && matchesStatus;
+    });
 
     const openEditModal = (user: User) => {
         setSelectedUser(user);
@@ -136,7 +148,42 @@ export function UsersTable({ users, roles }: UsersTableProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Search users..."
+                            className="w-full pl-8"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <Select value={roleFilter} onValueChange={setRoleFilter}>
+                        <SelectTrigger className="w-full sm:w-[150px]">
+                            <SelectValue placeholder="All Roles" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Roles</SelectItem>
+                            {roles.map((r) => (
+                                <SelectItem key={r.id} value={r.id}>
+                                    {r.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full sm:w-[150px]">
+                            <SelectValue placeholder="All Statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="suspended">Suspended</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
                 <Button onClick={() => setIsCreateModalOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" /> Add User
                 </Button>
@@ -153,45 +200,52 @@ export function UsersTable({ users, roles }: UsersTableProps) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {activeUsers.map((user) => (
-                            <TableRow key={user.id}>
-                                <TableCell className="font-medium">{user.name || "N/A"}</TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>
-                                    <Badge variant={user.role.name === "Admin" ? "default" : "secondary"}>
-                                        {user.role.name}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={user.status === "active" ? "outline" : "destructive"}>
-                                        {user.status}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                                <span className="sr-only">Open menu</span>
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>
-                                                Copy ID
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => openEditModal(user)}>
-                                                <Edit className="mr-2 h-4 w-4" /> Edit Role
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem className="text-red-600" onClick={() => setUserToDelete(user)}>
-                                                <Trash2 className="mr-2 h-4 w-4" /> Deactivate
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                        {filteredUsers.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                    No users found matching your search.
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            filteredUsers.map((user) => (
+                                <TableRow key={user.id}>
+                                    <TableCell className="font-medium">{user.name || "N/A"}</TableCell>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={user.role.name === "Admin" ? "default" : "secondary"}>
+                                            {user.role.name}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={user.status === "active" ? "outline" : "destructive"}>
+                                            {user.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Open menu</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>
+                                                    Copy ID
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={() => openEditModal(user)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Edit Role
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="text-red-600" onClick={() => setUserToDelete(user)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Deactivate
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            )))}
                     </TableBody>
                 </Table>
             </div>
