@@ -11,7 +11,9 @@ import {
     Activity,
     LogOut,
     Mail,
-    FileText
+    FileText,
+    Menu,
+    X
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -35,10 +37,22 @@ const routes = [
         color: "text-pink-700",
     },
     {
+        label: "Sessions",
+        icon: ShieldCheck,
+        href: "/dashboard/sessions",
+        color: "text-indigo-500",
+    },
+    {
         label: "Activity Logs",
         icon: Activity,
         href: "/dashboard/logs",
         color: "text-orange-700",
+    },
+    {
+        label: "Events & Routing",
+        icon: Activity,
+        href: "/dashboard/events",
+        color: "text-amber-500",
     },
     {
         label: "Email Templates",
@@ -53,9 +67,16 @@ const routes = [
         color: "text-amber-500",
     },
     {
+        label: "Email Gateway",
+        icon: Mail,
+        href: "/dashboard/email",
+        color: "text-blue-500",
+    },
+    {
         label: "Settings",
         icon: Settings,
         href: "/dashboard/settings",
+        color: "text-slate-400",
     },
 ];
 
