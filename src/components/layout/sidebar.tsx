@@ -47,10 +47,15 @@ const routes: RouteDef[] = [
         ]
     },
     {
-        label: "Pages & Content",
+        label: "Content",
         icon: FileText,
-        href: "/dashboard/pages",
         color: "text-purple-600",
+        children: [
+            { label: "Pages", href: "/dashboard/pages" },
+            { label: "Add New Page", href: "/dashboard/pages/new" },
+            { label: "Blog Posts", href: "/dashboard/posts" },
+            { label: "Write Post", href: "/dashboard/posts/new" },
+        ]
     },
     {
         label: "Media Manager",
@@ -154,7 +159,7 @@ export function Sidebar() {
 
                         return (
                             <Link
-                                key={route.href}
+                                key={route.label || route.href}
                                 href={route.href!}
                                 className={cn(
                                     "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:bg-white/10 rounded-lg transition-all",

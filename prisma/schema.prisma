@@ -29,6 +29,7 @@ model User {
   activityLogs  ActivityLog[]
   notifications Notification[]
   accounts      Account[]
+  posts         Post[]
 
   @@map("users")
 }
@@ -165,6 +166,26 @@ model Page {
   @@index([slug])
   @@index([status])
   @@map("pages")
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   @default("[]") // JSON blocks
+  excerpt     String   @default("")
+  featuredImg String   @default("")
+  status      String   @default("draft") // draft | published | archived
+  authorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([slug])
+  @@index([status])
+  @@index([authorId])
+  @@map("posts")
 }
 
 model SEOMeta {
