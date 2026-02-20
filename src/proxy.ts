@@ -30,7 +30,12 @@ const authConfig = {
     },
 } satisfies NextAuthConfig;
 
-export const { auth: middleware } = NextAuth(authConfig);
+const { auth } = NextAuth(authConfig);
+
+export default function proxy(request: any) {
+    // @ts-ignore
+    return auth(request);
+}
 
 export const config = {
     // https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher
