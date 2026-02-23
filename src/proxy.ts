@@ -23,7 +23,7 @@ const authConfig = {
             // Redirect users from root to dashboard
             if (nextUrl.pathname === "/") {
                 if (isLoggedIn) return Response.redirect(new URL("/dashboard", nextUrl));
-                return false;
+                return true;
             }
 
             // Protect dashboard routes
