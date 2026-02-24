@@ -37,6 +37,22 @@ export default async function ProfilePage() {
         provider: provider,
     };
 
+    const mediaItems = await prisma.media.findMany({
+        where: { mimeType: { startsWith: "image/" } },
+        orderBy: { createdAt: "desc" },
+        take: 200,
+        select: {
+            id: true,
+            url: true,
+            filename: true,
+            originalName: true,
+            alt: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+        },
+    });
+
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
             <div className="flex flex-col gap-2">
@@ -49,7 +65,7 @@ export default async function ProfilePage() {
                 </p>
             </div>
 
-            <ProfileForm user={userData} />
+            <ProfileForm user={userData} mediaItems={mediaItems} />
         </div>
     );
 }

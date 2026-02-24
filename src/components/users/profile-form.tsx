@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { updateProfile } from "@/actions/profile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MediaPicker, type MediaPickerItem } from "@/components/media/media-picker";
 
 const profileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
@@ -58,9 +59,10 @@ interface ProfileFormProps {
         image: string | null;
         provider?: string; // e.g. "credentials" vs "github"
     };
+    mediaItems: MediaPickerItem[];
 }
 
-export function ProfileForm({ user }: ProfileFormProps) {
+export function ProfileForm({ user, mediaItems }: ProfileFormProps) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -77,6 +79,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     });
 
     const isOAuth = user.provider !== "credentials" && user.provider !== undefined;
+    const currentImage = form.watch("image") || user.image || "";
 
     async function onSubmit(data: ProfileValues) {
         setIsSaving(true);
@@ -122,23 +125,34 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
                         <div className="flex items-center gap-6 mb-8">
                             <Avatar className="h-20 w-20 border">
-                                <AvatarImage src={form.getValues("image") || user.image || ""} />
+                                <AvatarImage src={currentImage} />
                                 <AvatarFallback className="text-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-white">{initials}</AvatarFallback>
                             </Avatar>
-                            <FormField
-                                control={form.control}
-                                name="image"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormLabel>Avatar Image URL</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="https://example.com/avatar.png" {...field} />
-                                        </FormControl>
-                                        <FormDescription>Leave empty to use your default initials.</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <div className="flex-1 space-y-3">
+                                <FormField
+                                    control={form.control}
+                                    name="image"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Avatar Image URL</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="https://example.com/avatar.png" {...field} />
+                                            </FormControl>
+                                            <FormDescription>Paste a URL or choose from Media Library.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <MediaPicker
+                                    items={mediaItems}
+                                    value={currentImage}
+                                    onSelect={(url) => form.setValue("image", url, { shouldDirty: true, shouldValidate: true })}
+                                    onClear={() => form.setValue("image", "", { shouldDirty: true, shouldValidate: true })}
+                                    title="Select Profile Image"
+                                    description="Choose an image from your uploaded media assets for your profile avatar."
+                                    triggerLabel="Choose Avatar"
+                                />
+                            </div>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-6">
