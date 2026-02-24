@@ -29,6 +29,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var preset = localStorage.getItem("theme-preset");
+                if (preset) document.documentElement.setAttribute("data-theme-preset", preset);
+              } catch (e) {}
+            `,
+          }}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

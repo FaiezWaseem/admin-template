@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { ThemePresets } from "@/components/settings/theme-presets";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default async function SettingsPage() {
             </div>
 
             <SettingsForm initialData={initialData} />
+            <ThemePresets />
         </div>
     );
 }

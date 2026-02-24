@@ -69,6 +69,7 @@ const routes: RouteDef[] = [
         color: "text-slate-400",
         children: [
             { label: "General Settings", href: "/dashboard/settings" },
+            { label: "Theme", href: "/dashboard/settings#theme" },
             { label: "Email Gateway", href: "/dashboard/email" },
             { label: "Sessions", href: "/dashboard/sessions" },
             { label: "Activity Logs", href: "/dashboard/logs" }
@@ -99,13 +100,13 @@ export function Sidebar() {
     };
 
     return (
-        <div className="space-y-4 py-4 flex flex-col h-full bg-slate-900 border-r border-slate-800 text-white w-64 shadow-xl overflow-y-auto">
+        <div className="space-y-4 py-4 flex h-full w-64 flex-col overflow-y-auto border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl">
             <div className="px-3 py-2 flex-1">
                 <Link href="/dashboard" className="flex items-center pl-3 mb-14">
-                    <div className="relative w-8 h-8 mr-4 bg-white rounded-md flex items-center justify-center font-bold text-slate-900">
+                    <div className="relative mr-4 flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary font-bold text-sidebar-primary-foreground">
                         A
                     </div>
-                    <h1 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                    <h1 className="text-2xl font-bold tracking-tight text-sidebar-foreground">
                         Admin
                     </h1>
                 </Link>
@@ -118,7 +119,7 @@ export function Sidebar() {
                                     open={openMenus[route.label]}
                                     onOpenChange={() => toggleMenu(route.label)}
                                 >
-                                    <CollapsibleTrigger className="flex items-center w-full text-sm group p-3 justify-between font-medium cursor-pointer hover:bg-white/10 rounded-lg transition-all text-zinc-400">
+                                    <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between rounded-lg p-3 text-sm font-medium text-sidebar-foreground/70 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                                         <div className="flex items-center">
                                             <route.icon className={cn("h-5 w-5 mr-3", route.color)} />
                                             {route.label}
@@ -134,14 +135,16 @@ export function Sidebar() {
                                                     href={child.href}
                                                     className={cn(
                                                         "text-sm group flex p-2 w-full justify-start font-medium cursor-pointer hover:bg-white/10 rounded-lg transition-all",
-                                                        isActive ? "bg-white/10 text-white" : "text-zinc-400"
+                                                        isActive
+                                                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                                                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                                     )}
                                                 >
                                                     {child.label}
                                                     {isActive && (
                                                         <motion.div
                                                             layoutId="sidebar-active-indicator"
-                                                            className="w-1.5 h-1.5 rounded-full bg-blue-500 ml-auto my-auto"
+                                                            className="my-auto ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary"
                                                             initial={{ opacity: 0 }}
                                                             animate={{ opacity: 1 }}
                                                             exit={{ opacity: 0 }}
@@ -163,7 +166,9 @@ export function Sidebar() {
                                 href={route.href!}
                                 className={cn(
                                     "text-sm group flex p-3 w-full justify-start font-medium cursor-pointer hover:bg-white/10 rounded-lg transition-all",
-                                    isActive ? "bg-white/10 text-white" : "text-zinc-400"
+                                    isActive
+                                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 )}
                             >
                                 <div className="flex items-center flex-1">
@@ -173,7 +178,7 @@ export function Sidebar() {
                                 {isActive && (
                                     <motion.div
                                         layoutId="sidebar-active-indicator"
-                                        className="w-1.5 h-1.5 rounded-full bg-blue-500 ml-auto my-auto"
+                                        className="my-auto ml-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary"
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}

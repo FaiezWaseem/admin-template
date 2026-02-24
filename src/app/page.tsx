@@ -1,24 +1,9 @@
-import fs from "fs/promises";
-import path from "path";
 import Link from "next/link";
 import { ArrowRight, Github, LogIn, UserPlus } from "lucide-react";
-import Markdown from "@/components/markdown";
 
 export const dynamic = "force-static";
 
-async function loadReadme() {
-  try {
-    const readmePath = path.join(process.cwd(), "README.md");
-    const buf = await fs.readFile(readmePath);
-    return buf.toString("utf-8");
-  } catch {
-    return "README.md not found. Please ensure it exists at the project root.";
-  }
-}
-
 export default async function LandingPage() {
-  const readme = await loadReadme();
-
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background to-muted/20">
       <div aria-hidden className="pointer-events-none absolute inset-0">
@@ -51,7 +36,7 @@ export default async function LandingPage() {
             </a>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-fuchsia-500 via-cyan-400 to-amber-400 px-4 py-2 text-sm font-medium text-zinc-900 shadow hover:opacity-90 transition"
+              className="inline-flex items-center gap-2 rounded-md  px-4 py-2 text-sm font-medium text-zinc-900 shadow hover:opacity-90 transition"
             >
               <LogIn className="h-4 w-4" />
               Sign In
@@ -106,18 +91,18 @@ export default async function LandingPage() {
             <span className="h-3 w-3 rounded-full bg-red-500" />
             <span className="h-3 w-3 rounded-full bg-yellow-400" />
             <span className="h-3 w-3 rounded-full bg-green-500" />
-            <span className="ml-3 text-xs text-zinc-400">README.md</span>
+            <span className="ml-3 text-xs text-zinc-400">Dashboard Preview</span>
           </div>
-          <div className="max-h-[60vh] overflow-auto rounded-b-xl border-t border-zinc-800/60 bg-zinc-950 p-4">
-            {/* Markdown content will be rendered by MarkdownRenderer */}
-            <div className="prose prose-invert max-w-none">
-              {/* @ts-ignore Server Component */}
-              {Markdown({ source: readme })}
-            </div>
+          <div className="rounded-b-xl border-t border-zinc-800/60 bg-zinc-950 p-3 md:p-4">
+            <img
+              src="/image.png"
+              alt="Dashboard preview"
+              className="h-auto w-full rounded-lg border border-zinc-800 object-cover"
+            />
           </div>
         </div>
         <p className="text-center text-sm text-muted-foreground">
-          Docs are mirrored from README.md. Edit the file to update this view.
+          Preview of the admin dashboard UI.
         </p>
       </section>
 

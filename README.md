@@ -426,6 +426,87 @@ npx prisma db seed        # Seed the database
 
 ---
 
+## Theme Variants (Developer Guide)
+
+The admin dashboard supports color presets from the **Settings > Theme** panel.
+
+### Built-in presets
+
+- `current` (default app tokens)
+- `red`
+- `black-white`
+- `blue`
+- `teal`
+- `orange`
+
+### How presets work
+
+Theme presets are applied by setting a `data-theme-preset` attribute on the `<html>` element:
+
+- Example: `<html data-theme-preset="teal">`
+- Selection is persisted in `localStorage` using the key `theme-preset`
+- Light/dark mode (`next-themes`) still works independently
+
+### Files to update when adding a new preset
+
+1. `src/components/settings/theme-presets.tsx`
+2. `src/app/globals.css`
+
+### 1) Add the preset to the selector UI
+
+In `src/components/settings/theme-presets.tsx`:
+
+- Add the preset `id` to the `ThemePreset["id"]` union type
+- Add a new entry in the `presets` array (label, description, swatches)
+
+Example:
+
+```ts
+{
+  id: "green",
+  label: "Green Theme",
+  description: "Fresh green accent palette.",
+  swatches: ["#16a34a", "#22c55e", "#86efac"],
+}
+```
+
+### 2) Add CSS variable overrides in `globals.css`
+
+Create both light and dark preset blocks:
+
+```css
+:root[data-theme-preset="green"] {
+  --primary: ...;
+  --primary-foreground: ...;
+  --ring: ...;
+  --accent: ...;
+  --accent-foreground: ...;
+  --chart-1: ...;
+  --chart-2: ...;
+  --chart-3: ...;
+
+  /* Sidebar tokens (required if you want sidebar UI to change too) */
+  --sidebar: ...;
+  --sidebar-foreground: ...;
+  --sidebar-primary: ...;
+  --sidebar-primary-foreground: ...;
+  --sidebar-accent: ...;
+  --sidebar-accent-foreground: ...;
+  --sidebar-border: ...;
+  --sidebar-ring: ...;
+}
+
+.dark[data-theme-preset="green"] {
+  /* Dark-mode equivalents for the same tokens */
+}
+```
+
+### Important note
+
+If a preset updates only `--primary` / `--accent` and not the `--sidebar-*` variables, the main UI will change but the sidebar may appear unchanged.
+
+---
+
 ## License
 
 MIT
