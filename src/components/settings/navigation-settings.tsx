@@ -19,7 +19,7 @@ import { updateSiteSettings } from "@/actions/settings";
 import { cn } from "@/lib/utils";
 import { MediaPicker, type MediaPickerItem } from "@/components/media/media-picker";
 
-type NavLink = { label: string; href: string; description?: string };
+type NavLink = { label: string; href: string; description?: string; imageUrl?: string };
 type NavColumn = { title: string; links: NavLink[] };
 type NavItem =
   | { id: string; type: "link"; label: string; href: string }
@@ -435,58 +435,94 @@ export function NavigationSettings({
 
                     <div className="space-y-2">
                       {col.links.map((link, linkIndex) => (
-                        <div key={`${item.id}-${colIndex}-${linkIndex}`} className="grid gap-2 rounded border bg-background p-2 md:grid-cols-3">
-                          <Input
-                            value={link.label}
-                            onChange={(e) =>
-                              setConfig((prev) => {
-                                const next = structuredClone(prev);
-                                (next.items[itemIndex] as any).columns[colIndex].links[linkIndex].label = e.target.value;
-                                return next;
-                              })
-                            }
-                            placeholder="Link label"
-                          />
-                          <Input
-                            value={link.href}
-                            onChange={(e) =>
-                              setConfig((prev) => {
-                                const next = structuredClone(prev);
-                                (next.items[itemIndex] as any).columns[colIndex].links[linkIndex].href = e.target.value;
-                                return next;
-                              })
-                            }
-                            placeholder="/path"
-                          />
-                          <div className="flex gap-2">
-                            <Input
-                              value={link.description || ""}
-                              onChange={(e) =>
-                                setConfig((prev) => {
-                                  const next = structuredClone(prev);
-                                  (next.items[itemIndex] as any).columns[colIndex].links[linkIndex].description = e.target.value;
-                                  return next;
-                                })
-                              }
-                              placeholder="Description"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 text-red-600"
-                              onClick={() =>
-                                setConfig((prev) => {
-                                  const next = structuredClone(prev);
-                                  (next.items[itemIndex] as any).columns[colIndex].links.splice(linkIndex, 1);
-                                  return next;
-                                })
-                              }
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          <div key={`${item.id}-${colIndex}-${linkIndex}`} className="space-y-2 rounded border bg-background p-2">
+                            <div className="grid gap-2 md:grid-cols-3">
+                              <Input
+                                value={link.label}
+                                onChange={(e) =>
+                                  setConfig((prev) => {
+                                    const next = structuredClone(prev);
+                                    (next.items[itemIndex] as any).columns[colIndex].links[linkIndex].label = e.target.value;
+                                    return next;
+                                  })
+                                }
+                                placeholder="Link label"
+                              />
+                              <Input
+                                value={link.href}
+                                onChange={(e) =>
+                                  setConfig((prev) => {
+                                    const next = structuredClone(prev);
+                                    (next.items[itemIndex] as any).columns[colIndex].links[linkIndex].href = e.target.value;
+                                    return next;
+                                  })
+                                }
+                                placeholder="/path"
+                              />
+                              <div className="flex gap-2">
+                                <Input
+                                  value={link.description || ""}
+                                  onChange={(e) =>
+                                    setConfig((prev) => {
+                                      const next = structuredClone(prev);
+                                      (next.items[itemIndex] as any).columns[colIndex].links[linkIndex].description = e.target.value;
+                                      return next;
+                                    })
+                                  }
+                                  placeholder="Description"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 text-red-600"
+                                  onClick={() =>
+                                    setConfig((prev) => {
+                                      const next = structuredClone(prev);
+                                      (next.items[itemIndex] as any).columns[colIndex].links.splice(linkIndex, 1);
+                                      return next;
+                                    })
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+                              <Input
+                                value={link.imageUrl || ""}
+                                onChange={(e) =>
+                                  setConfig((prev) => {
+                                    const next = structuredClone(prev);
+                                    (next.items[itemIndex] as any).columns[colIndex].links[linkIndex].imageUrl = e.target.value;
+                                    return next;
+                                  })
+                                }
+                                placeholder="Image URL for mega menu card (optional)"
+                              />
+                              <MediaPicker
+                                items={mediaItems}
+                                value={link.imageUrl || ""}
+                                onSelect={(url) =>
+                                  setConfig((prev) => {
+                                    const next = structuredClone(prev);
+                                    (next.items[itemIndex] as any).columns[colIndex].links[linkIndex].imageUrl = url;
+                                    return next;
+                                  })
+                                }
+                                onClear={() =>
+                                  setConfig((prev) => {
+                                    const next = structuredClone(prev);
+                                    delete (next.items[itemIndex] as any).columns[colIndex].links[linkIndex].imageUrl;
+                                    return next;
+                                  })
+                                }
+                                triggerLabel="Pick Image"
+                                title="Select Mega Menu Image"
+                                description="Choose an image for this mega menu item."
+                              />
+                            </div>
                           </div>
-                        </div>
                       ))}
                       <Button
                         type="button"

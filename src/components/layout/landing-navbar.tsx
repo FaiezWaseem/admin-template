@@ -6,7 +6,7 @@ import { Github, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HoveredLink, Menu, MenuItem } from "@/components/ui/navbar-menu";
 
-type NavLink = { label: string; href: string; description?: string };
+type NavLink = { label: string; href: string; description?: string; imageUrl?: string };
 type NavColumn = { title: string; links: NavLink[] };
 type NavItem =
   | { id?: string; type: "link"; label: string; href: string }
@@ -98,10 +98,22 @@ export function LandingNavbar({ navigationConfig }: { navigationConfig: Navigati
                                   href={link.href}
                                   className="block rounded-md px-2 py-2 hover:bg-accent transition"
                                 >
-                                  <div className="text-sm font-medium text-foreground">{link.label}</div>
-                                  {link.description && (
-                                    <div className="text-xs text-muted-foreground">{link.description}</div>
-                                  )}
+                                  <div className="flex items-start gap-3">
+                                    {link.imageUrl && (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img
+                                        src={link.imageUrl}
+                                        alt={link.label}
+                                        className="h-12 w-16 rounded-md border object-cover"
+                                      />
+                                    )}
+                                    <div>
+                                      <div className="text-sm font-medium text-foreground">{link.label}</div>
+                                      {link.description && (
+                                        <div className="text-xs text-muted-foreground">{link.description}</div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </Link>
                               ))}
                             </div>

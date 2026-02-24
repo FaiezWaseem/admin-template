@@ -6,7 +6,7 @@ import { RetroGrid } from "@/components/ui/retro-grid";
 
 export const dynamic = "force-dynamic";
 
-type NavLink = { label: string; href: string; description?: string };
+type NavLink = { label: string; href: string; description?: string; imageUrl?: string };
 type NavColumn = { title: string; links: NavLink[] };
 type NavItem =
   | { id?: string; type: "link"; label: string; href: string }
@@ -164,4 +164,3 @@ export default async function LandingPage() {
     </main>
   );
 }
-
