@@ -1,66 +1,100 @@
 import Link from "next/link";
-import { ArrowRight, Github, LogIn, UserPlus } from "lucide-react";
+import { ArrowRight, UserPlus } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { LandingNavbar } from "@/components/layout/landing-navbar";
+import { RetroGrid } from "@/components/ui/retro-grid";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
+
+type NavLink = { label: string; href: string; description?: string };
+type NavColumn = { title: string; links: NavLink[] };
+type NavItem =
+  | { id?: string; type: "link"; label: string; href: string }
+  | { id?: string; type: "dropdown"; label: string; links: NavLink[] }
+  | { id?: string; type: "mega"; label: string; columns: NavColumn[] };
+type NavigationConfig = {
+  logo?: { imageUrl?: string; text?: string; href?: string };
+  alignment?: "left" | "center" | "right";
+  items: NavItem[];
+};
+
+const defaultNavigation: NavigationConfig = {
+  logo: { imageUrl: "/logo.svg", text: "Admin Template", href: "/" },
+  alignment: "left",
+  items: [
+    { type: "link", label: "Docs", href: "/docs" },
+    {
+      type: "dropdown",
+      label: "Resources",
+      links: [
+        { label: "Docs", href: "/docs", description: "Setup and guides" },
+        { label: "Blog", href: "/blog", description: "Latest articles" },
+      ],
+    },
+    {
+      type: "mega",
+      label: "Explore",
+      columns: [
+        {
+          title: "Product",
+          links: [
+            { label: "Dashboard", href: "/dashboard", description: "Overview & analytics" },
+            { label: "Media", href: "/dashboard/media", description: "Asset management" },
+          ],
+        },
+        {
+          title: "Content",
+          links: [
+            { label: "Pages", href: "/dashboard/pages", description: "Manage pages" },
+            { label: "Posts", href: "/dashboard/posts", description: "Blog and updates" },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+async function loadNavigationConfig(): Promise<NavigationConfig> {
+  try {
+    const row = await prisma.siteConfig.findUnique({ where: { key: "navigation_config" } });
+    if (!row?.value) return defaultNavigation;
+    const parsed = JSON.parse(row.value);
+    if (Array.isArray(parsed?.items)) {
+      return {
+        logo: {
+          imageUrl: parsed?.logo?.imageUrl || defaultNavigation.logo?.imageUrl,
+          text: parsed?.logo?.text || defaultNavigation.logo?.text,
+          href: parsed?.logo?.href || defaultNavigation.logo?.href,
+        },
+        alignment: ["left", "center", "right"].includes(parsed?.alignment)
+          ? parsed.alignment
+          : defaultNavigation.alignment,
+        items: parsed.items,
+      };
+    }
+    return defaultNavigation;
+  } catch {
+    return defaultNavigation;
+  }
+}
 
 export default async function LandingPage() {
+  const navigationConfig = await loadNavigationConfig();
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background to-muted/20">
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-[-20%] h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,_#60a5fa_18%,transparent_45%)] opacity-15 blur-3xl animate-float-slow" />
       </div>
 
-      <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <img src="/logo.svg" alt="Logo" className="h-7 w-7" />
-            <span className="text-sm font-semibold tracking-wide text-foreground">
-              Admin Template
-            </span>
-          </div>
-          <nav className="hidden items-center gap-6 md:flex">
-            <Link href="/docs" className="text-sm text-muted-foreground hover:text-foreground transition">
-              Docs
-            </Link>
-            <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition">
-              Dashboard
-            </Link>
-            <a
-              href="https://github.com/FaiezWaseem/admin-template"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm hover:bg-accent transition"
-            >
-              <Github className="h-4 w-4" />
-              GitHub
-            </a>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 rounded-md  px-4 py-2 text-sm font-medium text-zinc-900 shadow hover:opacity-90 transition"
-            >
-              <LogIn className="h-4 w-4" />
-              Sign In
-            </Link>
-          </nav>
-          <div className="md:hidden">
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 rounded-md bg-foreground px-3 py-1.5 text-sm text-background"
-            >
-              <LogIn className="h-4 w-4" />
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </header>
+      <LandingNavbar navigationConfig={navigationConfig} />
 
-      <section className="relative px-6 py-16 md:py-24">
+      <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-background md:shadow-xl">
         <div className="mx-auto max-w-6xl text-center space-y-7">
           <div className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-3 py-1 text-sm text-muted-foreground backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
             Now in Next.js App Router
           </div>
-          <h1 className="text-balance bg-gradient-to-r from-violet-400 to-cyan-300 bg-clip-text text-5xl font-extrabold tracking-tight text-transparent md:text-7xl">
+          <h1 className="pointer-events-none z-10 whitespace-pre-wrap bg-gradient-to-b from-[#ffd319] via-[#ff2975] to-[#8c1eff] bg-clip-text text-center text-7xl font-bold leading-none tracking-tighter text-transparent">
             Build Internal Tools Faster
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
@@ -83,7 +117,11 @@ export default async function LandingPage() {
             </Link>
           </div>
         </div>
-      </section>
+
+        <RetroGrid />
+      </div>
+
+
 
       <section id="docs" className="mx-auto mt-6 max-w-6xl space-y-4 px-6">
         <div className="rounded-xl border bg-zinc-900/95 text-zinc-200 shadow-[0_0_0_1px_rgba(255,255,255,0.06)] backdrop-blur">

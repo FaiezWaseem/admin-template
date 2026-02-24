@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { SettingsForm } from "@/components/settings/settings-form";
-import { ThemePresets } from "@/components/settings/theme-presets";
+import { SettingsTabs } from "@/components/settings/settings-tabs";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -18,6 +17,22 @@ export default async function SettingsPage() {
         return acc;
     }, {} as Record<string, string>);
 
+    const mediaItems = await prisma.media.findMany({
+        where: { mimeType: { startsWith: "image/" } },
+        orderBy: { createdAt: "desc" },
+        take: 200,
+        select: {
+            id: true,
+            url: true,
+            filename: true,
+            originalName: true,
+            alt: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+        },
+    });
+
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -28,9 +43,7 @@ export default async function SettingsPage() {
                     </p>
                 </div>
             </div>
-
-            <SettingsForm initialData={initialData} />
-            <ThemePresets />
+            <SettingsTabs initialData={initialData} mediaItems={mediaItems} />
         </div>
     );
 }

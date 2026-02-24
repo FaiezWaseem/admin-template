@@ -20,9 +20,8 @@ const authConfig = {
                 return true;
             }
 
-            // Redirect users from root to dashboard
+            // Allow public landing page for everyone (including logged-in users)
             if (nextUrl.pathname === "/") {
-                if (isLoggedIn) return Response.redirect(new URL("/dashboard", nextUrl));
                 return true;
             }
 

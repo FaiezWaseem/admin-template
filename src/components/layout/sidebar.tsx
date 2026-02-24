@@ -76,6 +76,7 @@ const routes: RouteDef[] = [
         color: "text-slate-400",
         children: [
             { label: "General Settings", href: "/dashboard/settings" },
+            { label: "Navigation", href: "/dashboard/settings#navigation" },
             { label: "Theme", href: "/dashboard/settings#theme" },
             { label: "Email Gateway", href: "/dashboard/email" },
             { label: "Sessions", href: "/dashboard/sessions" },
