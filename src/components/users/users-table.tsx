@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Loader2, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { updateUserRole, deleteUser, createUser } from "@/actions/users";
+import { updateUser, setUserStatus, deleteUser, createUser } from "@/actions/users";
 import {
     Select,
     SelectContent,
@@ -61,7 +61,7 @@ interface UsersTableProps {
 export function UsersTable({ users, roles }: UsersTableProps) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
-    const [selectedRole, setSelectedRole] = useState("");
+    const [editData, setEditData] = useState({ name: "", email: "", roleId: "", status: "active" });
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [createData, setCreateData] = useState({ name: "", email: "", password: "", roleId: roles[0]?.id || "" });
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,7 +86,12 @@ export function UsersTable({ users, roles }: UsersTableProps) {
 
     const openEditModal = (user: User) => {
         setSelectedUser(user);
-        setSelectedRole(user.role.id);
+        setEditData({
+            name: user.name || "",
+            email: user.email || "",
+            roleId: user.role.id,
+            status: user.status || "active",
+        });
         setIsEditModalOpen(true);
     };
 
@@ -112,16 +117,16 @@ export function UsersTable({ users, roles }: UsersTableProps) {
         }
     };
 
-    const handleSaveRole = async () => {
+    const handleSaveUser = async () => {
         if (!selectedUser) return;
         setIsSubmitting(true);
         try {
-            const res = await updateUserRole(selectedUser.id, selectedRole);
+            const res = await updateUser(selectedUser.id, editData);
             if (res.success) {
-                toast.success("User role updated successfully.");
+                toast.success("User updated successfully.");
                 setIsEditModalOpen(false);
             } else {
-                toast.error(res.error || "Failed to update role.");
+                toast.error(res.error || "Failed to update user.");
             }
         } catch {
             toast.error("An unexpected error occurred.");
@@ -143,6 +148,20 @@ export function UsersTable({ users, roles }: UsersTableProps) {
         } finally {
             setIsDeleting(false);
             setUserToDelete(null);
+        }
+    };
+
+    const handleStatusChange = async (userId: string, status: "active" | "suspended" | "disabled") => {
+        setIsSubmitting(true);
+        try {
+            const res = await setUserStatus(userId, status);
+            if (res.success) {
+                toast.success(`User ${status === "active" ? "enabled" : "updated"} successfully.`);
+            } else {
+                toast.error(res.error || "Failed to update status.");
+            }
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -217,7 +236,7 @@ export function UsersTable({ users, roles }: UsersTableProps) {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={user.status === "active" ? "outline" : "destructive"}>
+                                        <Badge variant={user.status === "active" ? "outline" : user.status === "suspended" ? "secondary" : "destructive"}>
                                             {user.status}
                                         </Badge>
                                     </TableCell>
@@ -236,8 +255,23 @@ export function UsersTable({ users, roles }: UsersTableProps) {
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onClick={() => openEditModal(user)}>
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit Role
+                                                    <Edit className="mr-2 h-4 w-4" /> Edit User
                                                 </DropdownMenuItem>
+                                                {user.status !== "active" && (
+                                                    <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")}>
+                                                        Enable Account
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {user.status !== "disabled" && (
+                                                    <DropdownMenuItem onClick={() => handleStatusChange(user.id, "disabled")}>
+                                                        Disable Account
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {user.status !== "suspended" && (
+                                                    <DropdownMenuItem onClick={() => handleStatusChange(user.id, "suspended")}>
+                                                        Suspend Account
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuItem className="text-red-600" onClick={() => setUserToDelete(user)}>
                                                     <Trash2 className="mr-2 h-4 w-4" /> Deactivate
                                                 </DropdownMenuItem>
@@ -253,14 +287,32 @@ export function UsersTable({ users, roles }: UsersTableProps) {
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit User Role</DialogTitle>
+                        <DialogTitle>Edit User</DialogTitle>
                         <DialogDescription>
-                            Change the system role for {selectedUser?.email}.
+                            Update account details for {selectedUser?.email}.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Select value={selectedRole} onValueChange={setSelectedRole}>
+                            <label className="text-sm font-medium">Name</label>
+                            <Input
+                                value={editData.name}
+                                onChange={(e) => setEditData((s) => ({ ...s, name: e.target.value }))}
+                                placeholder="Full name"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <label className="text-sm font-medium">Email</label>
+                            <Input
+                                type="email"
+                                value={editData.email}
+                                onChange={(e) => setEditData((s) => ({ ...s, email: e.target.value }))}
+                                placeholder="user@example.com"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <label className="text-sm font-medium">Role</label>
+                            <Select value={editData.roleId} onValueChange={(val) => setEditData((s) => ({ ...s, roleId: val }))}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a role" />
                                 </SelectTrigger>
@@ -273,7 +325,20 @@ export function UsersTable({ users, roles }: UsersTableProps) {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <Button disabled={isSubmitting} onClick={handleSaveRole}>
+                        <div className="grid gap-2">
+                            <label className="text-sm font-medium">Status</label>
+                            <Select value={editData.status} onValueChange={(val) => setEditData((s) => ({ ...s, status: val }))}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="suspended">Suspended</SelectItem>
+                                    <SelectItem value="disabled">Disabled</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button disabled={isSubmitting} onClick={handleSaveUser}>
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Changes
                         </Button>

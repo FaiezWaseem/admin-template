@@ -55,6 +55,49 @@ export async function updateUserRole(userId: string, roleId: string) {
     }
 }
 
+export async function updateUser(userId: string, data: { name: string; email: string; roleId: string; status: string }) {
+    try {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) return { success: false, error: "User not found" };
+
+        const role = await prisma.role.findUnique({ where: { id: data.roleId } });
+        if (!role) return { success: false, error: "Invalid role selected" };
+
+        if (data.email !== user.email) {
+            const existing = await prisma.user.findUnique({ where: { email: data.email } });
+            if (existing) return { success: false, error: "Email already exists" };
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: {
+                name: data.name,
+                email: data.email,
+                roleId: data.roleId,
+                status: data.status,
+            },
+        });
+
+        revalidatePath("/dashboard/users");
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message || "Failed to update user" };
+    }
+}
+
+export async function setUserStatus(userId: string, status: "active" | "suspended" | "disabled") {
+    try {
+        await prisma.user.update({
+            where: { id: userId },
+            data: { status },
+        });
+        revalidatePath("/dashboard/users");
+        return { success: true };
+    } catch {
+        return { success: false, error: "Failed to update user status" };
+    }
+}
+
 export async function deleteUser(userId: string) {
     try {
         await prisma.user.update({
