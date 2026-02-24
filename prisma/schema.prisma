@@ -168,6 +168,49 @@ model Page {
   @@map("pages")
 }
 
+// CRM
+
+model CRMContact {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String   @default("")
+  email       String   @unique
+  phone       String   @default("")
+  company     String   @default("")
+  jobTitle    String   @default("")
+  status      String   @default("lead") // lead | qualified | customer | inactive
+  source      String   @default("manual")
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  deals       CRMDeal[]
+
+  @@index([email])
+  @@index([status])
+  @@map("crm_contacts")
+}
+
+model CRMDeal {
+  id             String   @id @default(cuid())
+  title          String
+  contactId      String?
+  stage          String   @default("lead") // lead | qualified | proposal | negotiation | won | lost
+  value          Float    @default(0)
+  currency       String   @default("USD")
+  expectedClose  DateTime?
+  description    String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  contact        CRMContact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([contactId])
+  @@index([stage])
+  @@index([expectedClose])
+  @@map("crm_deals")
+}
+
 model Post {
   id          String   @id @default(cuid())
   title       String

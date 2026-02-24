@@ -13,6 +13,7 @@ import {
     LogOut,
     Mail,
     FileText,
+    BriefcaseBusiness,
     Menu,
     X,
     FileImage,
@@ -62,6 +63,12 @@ const routes: RouteDef[] = [
         icon: FileImage,
         href: "/dashboard/media",
         color: "text-emerald-500",
+    },
+    {
+        label: "CRM",
+        icon: BriefcaseBusiness,
+        href: "/dashboard/crm",
+        color: "text-orange-500",
     },
     {
         label: "Settings",
