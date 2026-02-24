@@ -63,7 +63,9 @@ export default function Markdown({ source }: { source: string }) {
     if (h) {
       const level = h[1].length;
       const content = renderInline(h[2]);
+      // @ts-ignore
       const Tag = `h${Math.min(6, level)}` as keyof JSX.IntrinsicElements;
+      //@ts-ignore
       out.push(<Tag key={`h-${i}`}>{content}</Tag>);
       i++;
       continue;

@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    adapterPath: require.resolve("next-bun-compile"),
+  },
   images: {
     remotePatterns: [
       {
